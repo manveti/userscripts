@@ -1,0 +1,8 @@
+/*
+==UserCSS==
+@name             Glassdoor Fixes
+@match            https://www.glassdoor.com/*
+@version          1.0
+==/UserCSS==
+*/
+body {overflow:auto !important; position:static !important;}
