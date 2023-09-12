@@ -10,6 +10,7 @@
   const slotsExp = /(?<openSlots>\d+) Open Slots/;
 
   const scriptPrefix = "r20LfgQol";
+  const languageKey = scriptPrefix + "Language";
   const blockListingsKey = scriptPrefix + "BlockListings";
   const blockUsersKey = scriptPrefix + "BlockUsers";
   const maxCurPlayersKey = scriptPrefix + "MaxCurPlayers";
@@ -20,16 +21,21 @@
   const reasonMaxCur = "Too Many Current Players";
   const reasonMaxTotal = "Too Many Total Players";
 
-  let blockListings = JSON.parse(GM_getValue(blockListingsKey) || "[]");
+  let language = GM_getValue(languageKey) || "Any";
+  let blockListings = JSON.parse(GM_getValue(blockListingsKey) || "{}");
   let blockUsers = JSON.parse(GM_getValue(blockUsersKey) || "[]");
   let maxCurPlayers = JSON.parse(GM_getValue(maxCurPlayersKey) || "0");
   let maxTotalPlayers = JSON.parse(GM_getValue(maxTotalPlayersKey) || "0");
 
-  // check "free to play" and "mature content" boxes
+  // check "free to play" and "mature content" boxes and select English-language games
   const noPayToPlay = document.querySelector(".nopaytoplay");
   noPayToPlay.checked = true;
   const yesMatureContent = document.querySelector(".yesmaturecontent");
   yesMatureContent.checked = true;
+  const languageBox = document.querySelector(".advanced .inline-labels select[name=language]");
+  if (languageBox !== null) {
+    languageBox.value = language;
+  }
 
   let hiddenListings = [];
   let hiddenReasonCounts = {};
@@ -56,9 +62,9 @@
   }
 
   function blockListing(listing, listingId) {
-    blockListings = JSON.parse(GM_getValue(blockListingsKey) || "[]");
-    if (!blockListings.includes(listingId)) {
-      blockListings.push(listingId);
+    blockListings = JSON.parse(GM_getValue(blockListingsKey) || "{}");
+    if (!(listingId in blockListings)) {
+      blockListings[listingId] = Date.now();
       GM_setValue(blockListingsKey, JSON.stringify(blockListings));
     }
     hideListing(listing, reasonListing);
@@ -67,7 +73,7 @@
 
   function blockUser(userId) {
     blockUsers = JSON.parse(GM_getValue(blockUsersKey) || "[]");
-    if (!blockUsers.includes(userId)) {
+    if (!(userId in blockUsers)) {
       blockUsers.push(userId);
       GM_setValue(blockUsersKey, JSON.stringify(blockUsers));
     }
@@ -85,10 +91,44 @@
     updateShowButtons(reasonUser);
   }
 
+  function setLanguage() {
+    let langSel = document.getElementById(scriptPrefix + "LanguageBox");
+    if (langSel === null) {
+      return;
+    }
+    language = langSel.value;
+    GM_setValue(languageKey, language);
+  }
+
+  function setMaxPlayers() {
+    let maxCurPlayersBox = document.getElementById(scriptPrefix + "MaxCurPlayersBox");
+    if (maxCurPlayersBox !== null) {
+      maxCurPlayers = parseInt(maxCurPlayersBox.value);
+      GM_setValue(maxCurPlayersKey, JSON.stringify(maxCurPlayers));
+    }
+    let maxTotalPlayersBox = document.getElementById(scriptPrefix + "MaxTotalPlayersBox");
+    if (maxTotalPlayersBox !== null) {
+      maxTotalPlayers = parseInt(maxTotalPlayersBox.value);
+      GM_setValue(maxTotalPlayersKey, JSON.stringify(maxTotalPlayers));
+    }
+    //TODO: update listings
+  }
+
+  function resetMaxPlayers() {
+    let maxCurPlayersBox = document.getElementById(scriptPrefix + "MaxCurPlayersBox");
+    if (maxCurPlayersBox !== null) {
+      maxCurPlayersBox.value = "" + maxCurPlayers;
+    }
+    let maxTotalPlayersBox = document.getElementById(scriptPrefix + "MaxTotalPlayersBox");
+    if (maxTotalPlayersBox !== null) {
+      maxTotalPlayersBox.value = "" + maxTotalPlayers;
+    }
+  }
+
   for (let listing of document.querySelectorAll(".lfglisting")) {
     // hide specified listings
     const listingId = listing.getAttribute("data-listingid");
-    if (blockListings.includes(listingId)) {
+    if (listingId in blockListings) {
       hideListing(listing, reasonListing);
       continue;
     }
@@ -104,7 +144,7 @@
     let userMatch = userExp.exec(userProfile.href);
     if (userMatch !== null) {
       const userId = userMatch.groups.userId;
-      if (blockUsers.includes(userId)) {
+      if (userId in blockUsers) {
         hideListing(listing, reasonUser);
         continue;
       }
@@ -143,9 +183,35 @@
   settingsLbl.innerText = "Roll20 LFG QoL Settings / Stats";
   settingsStats.appendChild(settingsLbl);
   let settingsDiv = document.createElement("div");
-  //TODO: settings: max cur players, max total players; manage blocked listings/users
-  //GM_setValue(maxCurPlayersKey, JSON.stringify(5));
-  //GM_setValue(maxTotalPlayersKey, JSON.stringify(7));
+  let langSettingDiv = document.createElement("div");
+  langSettingDiv.appendChild(document.createTextNode("Language: "));
+  let langSel = languageBox.cloneNode(true);
+  langSel.id = scriptPrefix + "LanguageBox";
+  langSel.value = language;
+  langSel.onchange = setLanguage;
+  langSettingDiv.appendChild(langSel);
+  settingsDiv.appendChild(langSettingDiv);
+  let playersSettingsDiv = document.createElement("div");
+  playersSettingsDiv.appendChild(document.createTextNode("Max Current Players: "));
+  let maxCurPlayersBox = document.createElement("input");
+  maxCurPlayersBox.id = scriptPrefix + "MaxCurPlayersBox";
+  maxCurPlayersBox.value = "" + maxCurPlayers;
+  playersSettingsDiv.appendChild(maxCurPlayersBox);
+  playersSettingsDiv.appendChild(document.createTextNode("Max Total Players: "));
+  let maxTotalPlayersBox = document.createElement("input");
+  maxTotalPlayersBox.id = scriptPrefix + "MaxTotalPlayersBox";
+  maxTotalPlayersBox.value = "" + maxTotalPlayers;
+  playersSettingsDiv.appendChild(maxTotalPlayersBox);
+  let maxPlayersSetBut = document.createElement("button");
+  maxPlayersSetBut.innerText = "Set";
+  maxPlayersSetBut.onclick = setMaxPlayers;
+  playersSettingsDiv.appendChild(maxPlayersSetBut);
+  let maxPlayersResetBut = document.createElement("button");
+  maxPlayersResetBut.innerText = "Reset";
+  maxPlayersResetBut.onclick = resetMaxPlayers;
+  playersSettingsDiv.appendChild(maxPlayersResetBut);
+  settingsDiv.appendChild(playersSettingsDiv);
+  //TODO: additional settings: blocked listing prune interval; manage blocked listings/users
   settingsStats.appendChild(settingsDiv);
   let allHidden = document.createElement("button");
   allHidden.id = scriptPrefix + "ShowAllBut";
