@@ -23,7 +23,7 @@
 
   let language = GM_getValue(languageKey) || "Any";
   let blockListings = JSON.parse(GM_getValue(blockListingsKey) || "{}");
-  let blockUsers = JSON.parse(GM_getValue(blockUsersKey) || "[]");
+  let blockUsers = JSON.parse(GM_getValue(blockUsersKey) || "{}");
   let maxCurPlayers = JSON.parse(GM_getValue(maxCurPlayersKey) || "0");
   let maxTotalPlayers = JSON.parse(GM_getValue(maxTotalPlayersKey) || "0");
 
@@ -71,10 +71,10 @@
     updateShowButtons(reasonListing);
   }
 
-  function blockUser(userId) {
-    blockUsers = JSON.parse(GM_getValue(blockUsersKey) || "[]");
+  function blockUser(userId, userName) {
+    blockUsers = JSON.parse(GM_getValue(blockUsersKey) || "{}");
     if (!(userId in blockUsers)) {
-      blockUsers.push(userId);
+      blockUsers[userId] = userName;
       GM_setValue(blockUsersKey, JSON.stringify(blockUsers));
     }
     for (let listing of document.querySelectorAll(".lfglisting")) {
@@ -148,9 +148,10 @@
         hideListing(listing, reasonUser);
         continue;
       }
+      const userName = userProfile.innerText;
       let userButton = document.createElement("button");
       userButton.innerText = "Block User";
-      userButton.onclick = () => blockUser(userId);
+      userButton.onclick = () => blockUser(userId, userName);
       profileMeta.appendChild(userButton);
     }
 
