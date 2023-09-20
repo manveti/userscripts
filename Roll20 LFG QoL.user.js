@@ -64,6 +64,7 @@
   function blockListing(listing, listingId) {
     blockListings = JSON.parse(GM_getValue(blockListingsKey) || "{}");
     if (!(listingId in blockListings)) {
+      //TODO: {"name": ..., "lastSeen": Date.now()}
       blockListings[listingId] = Date.now();
       GM_setValue(blockListingsKey, JSON.stringify(blockListings));
     }
@@ -125,11 +126,85 @@
     }
   }
 
+  function populateBlockedListings(listDiv) {
+    let listingIds = [];
+    for (let listingId in blockListings) {
+      listingIds.push(listingId);
+    }
+    listingIds.sort();
+    for (let listingId of listingIds) {
+      let listingDiv = document.createElement("div");
+      let listingLbl = document.createElement("a");
+      listingLbl.innerText = listingId;  //TODO: listing name
+      listingLbl.href = "https://app.roll20.net/lfg/listing/" + listingId;
+      listingDiv.appendChild(listingLbl);
+      let listingTimestamp = new Date(blockListings[listingId]);
+      let timestampStr = listingTimestamp.toLocaleString(undefined, {"dateStyle": "short", "timeStyle": "short"});
+      listingDiv.appendChild(document.createTextNode(` Last Seen: ${timestampStr} `));
+      //TODO: unblock button
+      listDiv.appendChild(listingDiv);
+    }
+  }
+
+  function toggleBlockedListings() {
+    let blockedListingsDiv = document.getElementById(scriptPrefix + "BlockedListingsList");
+    let blockedListingsBut = document.getElementById(scriptPrefix + "BlockedListingsBut");
+    if ((!blockedListingsDiv) || (!blockedListingsBut)) {
+      return;
+    }
+    if (blockedListingsDiv.firstChild !== blockedListingsDiv.lastChild) {
+      blockedListingsDiv.removeChild(blockedListingsDiv.firstChild);
+      blockedListingsBut.innerText = "Show Blocked Listings";
+      return;
+    }
+    blockedListingsBut.innerText = "Hide Blocked Listings";
+    let listDiv = document.createElement("div");
+    populateBlockedListings(listDiv);
+    blockedListingsDiv.insertBefore(listDiv, blockedListingsDiv.firstChild);
+  }
+
+  function populateBlockedUsers(listDiv) {
+    let userIds = [];
+    for (let userId in blockUsers) {
+      userIds.push(userId);
+    }
+    userIds.sort((x, y) => blockUsers[x].localeCompare(blockUsers[y]));
+    for (let userId of userIds) {
+      let userDiv = document.createElement("div");
+      let userLbl = document.createElement("a");
+      userLbl.innerText = blockUsers[userId];
+      userLbl.href = "https://app.roll20.net/users/" + userId;
+      userDiv.appendChild(userLbl);
+      //TODO: unblock button
+      listDiv.appendChild(userDiv);
+    }
+  }
+
+  function toggleBlockedUsers() {
+    let blockedUsersDiv = document.getElementById(scriptPrefix + "BlockedUsersList");
+    let blockedUsersBut = document.getElementById(scriptPrefix + "BlockedUsersBut");
+    if ((!blockedUsersDiv) || (!blockedUsersBut)) {
+      return;
+    }
+    if (blockedUsersDiv.firstChild !== blockedUsersDiv.lastChild) {
+      blockedUsersDiv.removeChild(blockedUsersDiv.firstChild);
+      blockedUsersBut.innerText = "Show Blocked Users";
+      return;
+    }
+    blockedUsersBut.innerText = "Hide Blocked Users";
+    let listDiv = document.createElement("div");
+    populateBlockedUsers(listDiv);
+    blockedUsersDiv.insertBefore(listDiv, blockedUsersDiv.firstChild);
+  }
+
+  let blockListingsChanged = false;
   for (let listing of document.querySelectorAll(".lfglisting")) {
     // hide specified listings
     const listingId = listing.getAttribute("data-listingid");
     if (listingId in blockListings) {
       hideListing(listing, reasonListing);
+      blockListings[listingId] = Date.now();  //TODO: blockListings[listingId].lastSeen
+      blockListingsChanged = true;
       continue;
     }
     const thumb = listing.querySelector(".thumb");
@@ -176,6 +251,9 @@
       continue;
     }
   }
+  if (blockListingsChanged) {
+    GM_setValue(blockListingsKey, JSON.stringify(blockListings));
+  }
 
   // settings and statistics
   const campaigns = document.querySelector(".campaigns");
@@ -212,7 +290,23 @@
   maxPlayersResetBut.onclick = resetMaxPlayers;
   playersSettingsDiv.appendChild(maxPlayersResetBut);
   settingsDiv.appendChild(playersSettingsDiv);
-  //TODO: additional settings: blocked listing prune interval; manage blocked listings/users
+  let blockedListingsDiv = document.createElement("div");
+  blockedListingsDiv.id = scriptPrefix + "BlockedListingsList";
+  let blockedListingsBut = document.createElement("button");
+  blockedListingsBut.id = scriptPrefix + "BlockedListingsBut";
+  blockedListingsBut.innerText = "Show Blocked Listings";
+  blockedListingsBut.onclick = toggleBlockedListings;
+  blockedListingsDiv.appendChild(blockedListingsBut);
+  settingsDiv.appendChild(blockedListingsDiv);
+  let blockedUsersDiv = document.createElement("div");
+  blockedUsersDiv.id = scriptPrefix + "BlockedUsersList";
+  let blockedUsersBut = document.createElement("button");
+  blockedUsersBut.id = scriptPrefix + "BlockedUsersBut";
+  blockedUsersBut.innerText = "Show Blocked Users";
+  blockedUsersBut.onclick = toggleBlockedUsers;
+  blockedUsersDiv.appendChild(blockedUsersBut);
+  settingsDiv.appendChild(blockedUsersDiv);
+  //TODO: blocked listing prune interval
   settingsStats.appendChild(settingsDiv);
   let allHidden = document.createElement("button");
   allHidden.id = scriptPrefix + "ShowAllBut";
