@@ -136,7 +136,7 @@
     for (let listingId in blockListings) {
       listingIds.push(listingId);
     }
-    listingIds.sort();
+    listingIds.sort((x, y) => blockListings[x].name.localeCompare(blockListings[y].name));
     for (let listingId of listingIds) {
       let listingDiv = document.createElement("div");
       let listingLbl = document.createElement("a");
@@ -273,7 +273,7 @@
       continue;
     }
   }
-  
+
   // prune old blocked listings
   let pruneThreshold = Date.now() - listingPruneInterval * dayMs;
   let toPrune = [];
