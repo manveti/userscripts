@@ -15,17 +15,21 @@
   const blockUsersKey = scriptPrefix + "BlockUsers";
   const maxCurPlayersKey = scriptPrefix + "MaxCurPlayers";
   const maxTotalPlayersKey = scriptPrefix + "MaxTotalPlayers";
+  const listingPruneIntervalKey = scriptPrefix + "ListingPruneInterval";
 
   const reasonListing = "Listing Hidden";
   const reasonUser = "User Blocked";
   const reasonMaxCur = "Too Many Current Players";
   const reasonMaxTotal = "Too Many Total Players";
 
+  const dayMs = 24 * 60 * 60 * 1000;
+
   let language = GM_getValue(languageKey) || "Any";
   let blockListings = JSON.parse(GM_getValue(blockListingsKey) || "{}");
   let blockUsers = JSON.parse(GM_getValue(blockUsersKey) || "{}");
   let maxCurPlayers = JSON.parse(GM_getValue(maxCurPlayersKey) || "0");
   let maxTotalPlayers = JSON.parse(GM_getValue(maxTotalPlayersKey) || "0");
+  let listingPruneInterval = JSON.parse(GM_getValue(listingPruneIntervalKey) || "30");
 
   // check "free to play" and "mature content" boxes and select English-language games
   const noPayToPlay = document.querySelector(".nopaytoplay");
@@ -62,10 +66,11 @@
   }
 
   function blockListing(listing, listingId) {
+    const listingName = listing.querySelector(".lfglistingname");
+    const name = listingName?.innerText || listingId;
     blockListings = JSON.parse(GM_getValue(blockListingsKey) || "{}");
     if (!(listingId in blockListings)) {
-      //TODO: {"name": ..., "lastSeen": Date.now()}
-      blockListings[listingId] = Date.now();
+      blockListings[listingId] = {"name": name, "lastSeen": Date.now()};
       GM_setValue(blockListingsKey, JSON.stringify(blockListings));
     }
     hideListing(listing, reasonListing);
@@ -135,10 +140,10 @@
     for (let listingId of listingIds) {
       let listingDiv = document.createElement("div");
       let listingLbl = document.createElement("a");
-      listingLbl.innerText = listingId;  //TODO: listing name
+      listingLbl.innerText = blockListings[listingId].name;
       listingLbl.href = "https://app.roll20.net/lfg/listing/" + listingId;
       listingDiv.appendChild(listingLbl);
-      let listingTimestamp = new Date(blockListings[listingId]);
+      let listingTimestamp = new Date(blockListings[listingId].lastSeen);
       let timestampStr = listingTimestamp.toLocaleString(undefined, {"dateStyle": "short", "timeStyle": "short"});
       listingDiv.appendChild(document.createTextNode(` Last Seen: ${timestampStr} `));
       //TODO: unblock button
@@ -197,13 +202,30 @@
     blockedUsersDiv.insertBefore(listDiv, blockedUsersDiv.firstChild);
   }
 
+  function setListingPruneInterval() {
+    let pruneIntervalBox = document.getElementById(scriptPrefix + "ListingPruneIntervalBox");
+    if (!pruneIntervalBox) {
+      return;
+    }
+    listingPruneInterval = parseInt(pruneIntervalBox.value);
+    GM_setValue(listingPruneIntervalKey, JSON.stringify(listingPruneInterval));
+  }
+
+  function resetListingPruneInterval() {
+    let pruneIntervalBox = document.getElementById(scriptPrefix + "ListingPruneIntervalBox");
+    if (!pruneIntervalBox) {
+      return;
+    }
+    pruneIntervalBox.value = "" + listingPruneInterval;
+  }
+
   let blockListingsChanged = false;
   for (let listing of document.querySelectorAll(".lfglisting")) {
     // hide specified listings
     const listingId = listing.getAttribute("data-listingid");
     if (listingId in blockListings) {
       hideListing(listing, reasonListing);
-      blockListings[listingId] = Date.now();  //TODO: blockListings[listingId].lastSeen
+      blockListings[listingId].lastSeen = Date.now();
       blockListingsChanged = true;
       continue;
     }
@@ -250,6 +272,21 @@
       hideListing(listing, reasonMaxTotal);
       continue;
     }
+  }
+  
+  // prune old blocked listings
+  let pruneThreshold = Date.now() - listingPruneInterval * dayMs;
+  let toPrune = [];
+  for (let listingId in blockListings) {
+    if (blockListings[listingId].lastSeen < pruneThreshold) {
+      toPrune.push(listingId);
+    }
+  }
+  for (let listingId of toPrune) {
+    delete blockListings[listingId];
+  }
+  if (toPrune.length > 0) {
+    blockListingsChanged = true;
   }
   if (blockListingsChanged) {
     GM_setValue(blockListingsKey, JSON.stringify(blockListings));
@@ -306,7 +343,22 @@
   blockedUsersBut.onclick = toggleBlockedUsers;
   blockedUsersDiv.appendChild(blockedUsersBut);
   settingsDiv.appendChild(blockedUsersDiv);
-  //TODO: blocked listing prune interval
+  let pruneSettingsDiv = document.createElement("div");
+  pruneSettingsDiv.appendChild(document.createTextNode("Prune Blocked Listings After "));
+  let pruneIntervalBox = document.createElement("input");
+  pruneIntervalBox.id = scriptPrefix + "ListingPruneIntervalBox";
+  pruneIntervalBox.value = "" + listingPruneInterval;
+  pruneSettingsDiv.appendChild(pruneIntervalBox);
+  pruneSettingsDiv.appendChild(document.createTextNode(" days "));
+  let pruneIntervalSetBut = document.createElement("button");
+  pruneIntervalSetBut.innerText = "Set";
+  pruneIntervalSetBut.onclick = setListingPruneInterval;
+  pruneSettingsDiv.appendChild(pruneIntervalSetBut);
+  let pruneIntervalResetBut = document.createElement("button");
+  pruneIntervalResetBut.innerText = "Reset";
+  pruneIntervalResetBut.onclick = resetListingPruneInterval;
+  pruneSettingsDiv.appendChild(pruneIntervalResetBut);
+  settingsDiv.appendChild(pruneSettingsDiv);
   settingsStats.appendChild(settingsDiv);
   let allHidden = document.createElement("button");
   allHidden.id = scriptPrefix + "ShowAllBut";
