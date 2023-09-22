@@ -44,11 +44,12 @@
   let hiddenListings = [];
   let hiddenReasonCounts = {};
 
-  function hideListing(listing, reason) {
+  function hideListing(listing, reason, reasonArg = null) {
     let entry = {
       "listing": listing,
       "display": listing.style.display,
-      "reason": reason
+      "reason": reason,
+      "reasonArg": reasonArg
     };
     hiddenListings.push(entry);
     if (!hiddenReasonCounts[reason]) {
@@ -73,7 +74,7 @@
       blockListings[listingId] = {"name": name, "lastSeen": Date.now()};
       GM_setValue(blockListingsKey, JSON.stringify(blockListings));
     }
-    hideListing(listing, reasonListing);
+    hideListing(listing, reasonListing, listingId);
     updateShowButtons(reasonListing);
   }
 
@@ -92,7 +93,7 @@
       if ((userMatch === null) || (userMatch.groups.userId !== userId)) {
         continue;
       }
-      hideListing(listing, reasonUser);
+      hideListing(listing, reasonUser, userId);
     }
     updateShowButtons(reasonUser);
   }
@@ -131,6 +132,23 @@
     }
   }
 
+  function unblockListing(listDiv, listingDiv, listingId) {
+    blockListings = JSON.parse(GM_getValue(blockListingsKey) || "{}");
+    if (listingId in blockListings) {
+      delete blockListings[listingId];
+      GM_setValue(blockListingsKey, JSON.stringify(blockListings));
+    }
+    for (let i = 0; i < hiddenListings.length; i++) {
+      if ((hiddenListings[i].reason === reasonListing) && (hiddenListings[i].reasonArg === listingId)) {
+        hiddenListings[i].listing.style.display = hiddenListings[i].display;
+        hiddenListings.splice(i, 1);
+        updateShowButtons(reasonListing);
+        break;
+      }
+    }
+    listDiv.removeChild(listingDiv);
+  }
+
   function populateBlockedListings(listDiv) {
     let listingIds = [];
     for (let listingId in blockListings) {
@@ -146,7 +164,10 @@
       let listingTimestamp = new Date(blockListings[listingId].lastSeen);
       let timestampStr = listingTimestamp.toLocaleString(undefined, {"dateStyle": "short", "timeStyle": "short"});
       listingDiv.appendChild(document.createTextNode(` Last Seen: ${timestampStr} `));
-      //TODO: unblock button
+      let unblockListingBut = document.createElement("button");
+      unblockListingBut.innerText = "Unblock";
+      unblockListingBut.onclick = () => unblockListing(listDiv, listingDiv, listingId);
+      listingDiv.appendChild(unblockListingBut);
       listDiv.appendChild(listingDiv);
     }
   }
@@ -168,6 +189,26 @@
     blockedListingsDiv.insertBefore(listDiv, blockedListingsDiv.firstChild);
   }
 
+  function unblockUser(listDiv, userDiv, userId) {
+    blockUsers = JSON.parse(GM_getValue(blockUsersKey) || "{}");
+    if (userId in blockUsers) {
+      delete blockUsers[userId];
+      GM_setValue(blockUsersKey, JSON.stringify(blockUsers));
+    }
+    let newHiddenListings = [];
+    for (let entry of hiddenListings) {
+      if ((entry.reason === reasonUser) && (entry.reasonArg === userId)) {
+        entry.listing.style.display = entry.display;
+      }
+      else {
+        newHiddenListings.push(entry);
+      }
+    }
+    hiddenListings = newHiddenListings;
+    updateShowButtons(reasonUser);
+    listDiv.removeChild(userDiv);
+  }
+
   function populateBlockedUsers(listDiv) {
     let userIds = [];
     for (let userId in blockUsers) {
@@ -180,7 +221,10 @@
       userLbl.innerText = blockUsers[userId];
       userLbl.href = "https://app.roll20.net/users/" + userId;
       userDiv.appendChild(userLbl);
-      //TODO: unblock button
+      let unblockUserBut = document.createElement("button");
+      unblockUserBut.innerText = "Unblock";
+      unblockUserBut.onclick = () => unblockUser(listDiv, userDiv, userId);
+      userDiv.appendChild(unblockUserBut);
       listDiv.appendChild(userDiv);
     }
   }
@@ -224,7 +268,7 @@
     // hide specified listings
     const listingId = listing.getAttribute("data-listingid");
     if (listingId in blockListings) {
-      hideListing(listing, reasonListing);
+      hideListing(listing, reasonListing, listingId);
       blockListings[listingId].lastSeen = Date.now();
       blockListingsChanged = true;
       continue;
@@ -242,7 +286,7 @@
     if (userMatch !== null) {
       const userId = userMatch.groups.userId;
       if (userId in blockUsers) {
-        hideListing(listing, reasonUser);
+        hideListing(listing, reasonUser, userId);
         continue;
       }
       const userName = userProfile.innerText;
