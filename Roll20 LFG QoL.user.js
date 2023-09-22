@@ -233,7 +233,7 @@
     let listingButton = document.createElement("button");
     listingButton.innerText = "Hide Listing";
     listingButton.onclick = () => blockListing(listing, listingId);
-    thumb.appendChild(listingButton);
+    thumb.insertBefore(listingButton, thumb.firstChild);
 
     // hide listings by specified users
     const profileMeta = listing.querySelector(".profilemeta");
