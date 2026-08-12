@@ -16,6 +16,7 @@
   //TODO: eventually make these dynamic
   const HIDE_EMPLOYERS = [
     "Alignerr",  // spam
+    "Circle",  // spam
     "Crossing Hurdles",  // spam
     "Handshake",  // spam
     "Haystack",  // spam
@@ -28,75 +29,108 @@
     "YO AI Labs",  // spam
   ];
   const ANNOTATE_EMPLOYERS = [
-    "abridge",  // lies about remote
-    "anchorage digital",  // crypto
-    "appfigures",  // lies about remote
-    "archipelago",  // lies about remote
-    "axonius",  // lies about remote
-    "bastion",  // crypto
-    "cambium",  // lies about remote
-    "category labs",  // crypto
-    "circle",  // too much spam
-    "cohesity",  // lies about remote
-    "coinbase",  // crypto
-    "cointracker",  // crypto
-    "cook'd",  // lies about openings, just resume-fishing
-    "daksta \\| connecting mission critical talent",  // lies about remote
-    "earnest",  // lies about remote
-    "ecs \\(equus compute solutions\\)",  // lies about remote
-    "eigen labs",  // crypto
-    "exodus",  // crypto
-    "figure",  // crypto
-    "finders sa",  // crypto
-    "flexa",  // crypto
-    "flexton inc\\.",  // lies about remote
-    "fustis llc",  // lies about remote
-    "futuretech recruitment",  // lies about remote
-    "gemini",  // crypto
-    "hackajob",  // lies about remote
-    "hackerone",  // lies about remote
-    "hirematic talent solutions",  // lies about remote
-    "id\\.me",  // lies about remote
-    "inclusively",  // requires disability
-    "ingram micro",  // lies about remote
-    "insight global",  // lies about remote
-    "kinetic",  // crypto
-    "kraken",  // crypto
-    "magic eden",  // crypto
-    "metaplex foundation",  // crypto
-    "mobius talent global", // lies about openings, just resume-fishing
-    "nextaxiom",  // lies about remote
-    "nurp",  // lies about remote
-    "nxt level",  //lies about remote
-    "orca",  // crypto
-    "paradigm national",  // lies about remote
-    "paxos",  // crypto
-    "prime team partners",  // lies about remote
-    "prometheum",  // crypto
-    "qcells north america",  // lies about remote
-    "raydar",  // lies about remote
-    "river",  // crypto
-    "scribe",  // lies about remote
-    "seer",  // crypto
-    "sevenrooms",  // lies about openings, just resume-fishing
-    "shi international corp\\.",  // lies about remote
-    "success matcher recruitment, llc",  // lies about remote
-    "symphony labs",  // crypto
-    "tecton",  // lies about remote
-    "tensec",  // lies about remote
-    "tentec, inc\\.",  // lies about remote
-    "the fountain group",  // lies about remote
-    "the judge group",  // lies about remote
-    "trm labs",  // crypto
-    "trojan trading",  // crypto
-    "trustec",  // lies about remote
-    "uniswap labs",  // crypto
-    "united talent agency",  // lies about remote
-    "unseen",  // lies about openings, just resume-fishing
-    "upwards",  // lies about remote
-    "valve engineers",  // lies about remote
-    "wex", // lies about remote
-    "whatnot",  // lies about remote
+    "Abridge",  // lies about remote
+    "Afresh",  // ghosted
+    "Anchorage Digital",  // crypto
+    "Appfigures",  // lies about remote
+    "Archipelago",  // lies about remote
+    "Axonius",  // lies about remote
+    "Bastion",  // crypto
+    "Bitsight",  // ghosted
+    "Bowden Brown",  // ghosted
+    "Cambium",  // lies about remote
+    "Category Labs",  // crypto
+    "City Detect",  // ghosted
+    "Cohesity",  // lies about remote
+    "Coinbase",  // crypto
+    "CoinList",  // crypto
+    "Cointracker",  // crypto
+    "Cook'd",  // lies about openings, just resume-fishing
+    "Cortex",  // ghosted
+    "Daksta \\| Connecting Mission Critical Talent",  // lies about remote
+    "Earnest",  // lies about remote
+    "ECS \\(Equus Compute Solutions\\)",  // lies about remote
+    "Eigen Labs",  // crypto
+    "Engenious",  // lies about remote
+    "Exodus",  // crypto
+    "Figure",  // crypto
+    "Finders SA",  // crypto
+    "Flexa",  // crypto
+    "Flexton Inc\\.",  // lies about remote
+    "FUSTIS LLC",  // lies about remote
+    "FutureTech Recruitment",  // lies about remote
+    "FutureX",  // ghosted
+    "FuturHealth",  // ghosted
+    "Gemini",  // crypto
+    "Hackajob",  // lies about remote
+    "HackerOne",  // lies about remote
+    "Hirematic Talent Solutions",  // lies about remote
+    "Horizon3\\.ai",  // ghosted
+    "ID\\.me",  // lies about remote
+    "Inclusively",  // requires disability
+    "Ingram Micro",  // lies about remote
+    "Insight Global",  // lies about remote
+    "Katalyst Space Technologies",  // lies about remote
+    "Kinetic",  // crypto
+    "Kraken",  // crypto
+    "limitless",  // ghosted
+    "Magic Eden",  // crypto
+    "Magnet Forensics",  // ghosted
+    "Metaplex Foundation",  // crypto
+    "MissionHires",  // lies about remote
+    "Mobius Talent Global", // lies about openings, just resume-fishing
+    "Motional",  // ghosted
+    "Multi Media LLC",  // ghosted
+    "Mytra",  // ghosted
+    "NextAxiom",  // lies about remote
+    "NexTech Capital",  // lies about openings, just resume-fishing
+    "Nira Energy",  // ghosted
+    "Nurp",  // lies about remote
+    "Nxt Level",  // lies about remote
+    "Onebrief",  // ghosted
+    "Orca",  // crypto
+    "ŌURA",  // ghosted after invasive evaluation
+    "Paradigm National",  // lies about remote
+    "Paxos",  // crypto
+    "Prime Team Partners",  // lies about remote
+    "Prolaio",  // ghosted
+    "Prometheum",  // crypto
+    "Pryon",  // ghosted
+    "Qcells North America",  // lies about remote
+    "Raydar",  // lies about remote
+    "River",  // crypto
+    "Scribe",  // lies about remote
+    "Seer",  // crypto
+    "Seesaw",  // ghosted
+    "Selby Jennings",  // ghosted
+    "SevenRooms",  // lies about openings, just resume-fishing
+    "SHI International Corp\\.",  // lies about remote
+    "Smart Design",  // lies about remote
+    "Stott and May",  // ghosted
+    "Success Matcher Recruitment, LLC",  // lies about remote
+    "Symphony Labs",  // crypto
+    "Teal Energi",  // lies about remote
+    "Tecton",  // lies about remote
+    "Tensec",  // lies about remote
+    "Tentec, Inc\\.",  // lies about remote
+    "The Fountain Group",  // lies about remote
+    "The Judge Group",  // lies about remote
+    "The Voleon Group",  // ghosted
+    "TRM Labs",  // crypto
+    "Trojan Trading",  // crypto
+    "Trustec",  // lies about remote
+    "TVision",  // ghosted
+    "Uniswap Labs",  // crypto
+    "United Talent Agency",  // lies about remote
+    "Unseen",  // lies about openings, just resume-fishing
+    "Upwards",  // lies about remote
+    "Valon",  // ghosted
+    "Valve Engineers",  // lies about remote
+    "Wealthsimple",  // lies about openings, just resume-fishing
+    "Wex", // lies about remote
+    "Whatnot",  // lies about remote
+    "Yara AI",  // lies about openings, just resume-fishing
+    "Zest for Tech",  // ghosted
   ];
   let hideExp = new RegExp("^((" + HIDE_EMPLOYERS.join(")|(") + "))$", "i");
   let annotateExp = new RegExp("^((" + ANNOTATE_EMPLOYERS.join(")|(") + "))$", "i");
