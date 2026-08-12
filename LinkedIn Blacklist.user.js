@@ -4,9 +4,30 @@
 // @version          1.0
 // ==/UserScript==
 
-(function() {
-  const checkInterval = 2000;  // results pages don't result in reloads so we need to occasionally re-check the list
-  const blacklistedEmployers = [
+(async function() {
+  const JOB_LIST_SELECTOR = ".scaffold-layout__list";
+  const JOB_SELECTOR = "li";
+  const EMPLOYER_SELECTOR = ".artdeco-entity-lockup__subtitle";
+  const OBSERVER_OPTIONS = {
+    childList: true,
+    subtree: true
+  };
+  const SETTLE_DELAY = 200;  // ms; how long we wait for job list to settle down before traversing
+  //TODO: eventually make these dynamic
+  const HIDE_EMPLOYERS = [
+    "Alignerr",  // spam
+    "Crossing Hurdles",  // spam
+    "Handshake",  // spam
+    "Haystack",  // spam
+    "HelixRecruit",  // spam
+    "Hire Feed",  // spam
+    "Ladders",  // spam
+    "Quik Hire Staffing",  // spam
+    "RemoteHunter",  // spam
+    "Samsara",  // spam
+    "YO AI Labs",  // spam
+  ];
+  const ANNOTATE_EMPLOYERS = [
     "abridge",  // lies about remote
     "anchorage digital",  // crypto
     "appfigures",  // lies about remote
@@ -20,7 +41,6 @@
     "coinbase",  // crypto
     "cointracker",  // crypto
     "cook'd",  // lies about openings, just resume-fishing
-    "crossing hurdles",  // spam
     "daksta \\| connecting mission critical talent",  // lies about remote
     "earnest",  // lies about remote
     "ecs \\(equus compute solutions\\)",  // lies about remote
@@ -35,7 +55,6 @@
     "gemini",  // crypto
     "hackajob",  // lies about remote
     "hackerone",  // lies about remote
-    "helixrecruit",  // spam
     "hirematic talent solutions",  // lies about remote
     "id\\.me",  // lies about remote
     "inclusively",  // requires disability
@@ -79,47 +98,45 @@
     "wex", // lies about remote
     "whatnot",  // lies about remote
   ];
-  const empExp = new RegExp("^((" + blacklistedEmployers.join(")|(") + "))$", "i");
-  const nameSelector = ".artdeco-entity-lockup__subtitle";  // .job-card-container__primary-description
+  let hideExp = new RegExp("^((" + HIDE_EMPLOYERS.join(")|(") + "))$", "i");
+  let annotateExp = new RegExp("^((" + ANNOTATE_EMPLOYERS.join(")|(") + "))$", "i");
 
-  function docHasEmpNodes(ifDoc) {
-    for (let empNode of ifDoc.querySelectorAll(nameSelector)) {
-      if (empNode) {
-        return true;
+  let settleTimeout;
+
+  async function getJobList() {
+    return new Promise((resolve) => {
+      let jobList = document.querySelector(JOB_LIST_SELECTOR);
+      if (jobList) {
+        return resolve(jobList);
       }
-    }
-    return false;
+
+      let observer = new MutationObserver(() => {
+        let jobList = document.querySelector(JOB_LIST_SELECTOR);
+        if (jobList) {
+          observer.disconnect();
+          resolve(jobList);
+        }
+      });
+      observer.observe(document.body, OBSERVER_OPTIONS);
+    });
   }
 
-  function getIframeDoc() {
-    for (let ifr of document.getElementsByTagName("iframe")) {
-      let ifDoc = ifr.contentWindow.document;
-      if (docHasEmpNodes(ifDoc)) {
-        return ifDoc;
-      }
-    }
-    return null;
-  }
-
-  let doc = document;
-  let gotDoc = false;
-
-  function markBlacklisted() {
-    if (!gotDoc) {
-      let ifDoc = getIframeDoc();
-      if (ifDoc) {
-        doc = ifDoc;
-        gotDoc = true;
-      }
-    }
-    for (let empNode of doc.querySelectorAll(nameSelector)) {
-      if (empNode.linkedinBlacklistTested) {
+  function markBlacklistedHelper(jobList) {
+    for (let jobNode of jobList.querySelectorAll(JOB_SELECTOR)) {
+      if (jobNode.linkedinBlacklistTested) {
         continue;
       }
-      empNode.linkedinBlacklistTested = true;
+      let empNode = jobNode.querySelector(EMPLOYER_SELECTOR);
+      if (!empNode) {
+        continue;
+      }
+      jobNode.linkedinBlacklistTested = true;
       let employer = empNode.innerText.replace(/<!--.*?-->/g, "");
-      if (empExp.test(employer)){
-        let blacklistNode = doc.createElement("span");
+      if (hideExp.test(employer)) {
+        jobNode.style.display = "none";
+      }
+      else if (annotateExp.test(employer)) {
+        let blacklistNode = document.createElement("span");
         blacklistNode.innerText = "(blacklisted)";
         blacklistNode.style.color = "#FF0000";
         empNode.appendChild(blacklistNode);
@@ -127,5 +144,24 @@
     }
   }
 
-  setInterval(markBlacklisted, checkInterval);
+  function markBlacklistedAfterSettled(jobList) {
+    clearTimeout(settleTimeout);
+    settleTimeout = setTimeout(() => markBlacklistedHelper(jobList), SETTLE_DELAY);
+  }
+
+  function markBlacklisted(jobList) {
+    markBlacklistedHelper(jobList);
+    let observer = new MutationObserver((mutations) => {
+      function hasNewElement(mutation) {
+        return Array.from(mutation.addedNodes).some((node) => (node.nodeType == 1));  // nodeType 1 is element node
+      }
+      if (mutations.some(hasNewElement)) {
+        markBlacklistedAfterSettled(jobList);
+      }
+    });
+    observer.observe(jobList, OBSERVER_OPTIONS);
+  }
+
+  let jobList = await getJobList();
+  markBlacklisted(jobList);
 })();
