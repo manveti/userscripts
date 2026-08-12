@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name             LinkedIn Blacklist
-// @match            https://www.linkedin.com/jobs/search/*
+// @match            https://www.linkedin.com/*
 // @version          1.0
 // ==/UserScript==
 
@@ -9,49 +9,71 @@
   const blacklistedEmployers = [
     "abridge",  // lies about remote
     "anchorage digital",  // crypto
+    "appfigures",  // lies about remote
     "archipelago",  // lies about remote
     "axonius",  // lies about remote
+    "bastion",  // crypto
     "cambium",  // lies about remote
+    "category labs",  // crypto
     "circle",  // too much spam
     "cohesity",  // lies about remote
     "coinbase",  // crypto
     "cointracker",  // crypto
     "cook'd",  // lies about openings, just resume-fishing
+    "crossing hurdles",  // spam
+    "daksta \\| connecting mission critical talent",  // lies about remote
     "earnest",  // lies about remote
     "ecs \\(equus compute solutions\\)",  // lies about remote
     "eigen labs",  // crypto
     "exodus",  // crypto
     "figure",  // crypto
+    "finders sa",  // crypto
     "flexa",  // crypto
     "flexton inc\\.",  // lies about remote
+    "fustis llc",  // lies about remote
     "futuretech recruitment",  // lies about remote
     "gemini",  // crypto
     "hackajob",  // lies about remote
     "hackerone",  // lies about remote
+    "helixrecruit",  // spam
+    "hirematic talent solutions",  // lies about remote
     "id\\.me",  // lies about remote
     "inclusively",  // requires disability
+    "ingram micro",  // lies about remote
     "insight global",  // lies about remote
     "kinetic",  // crypto
     "kraken",  // crypto
     "magic eden",  // crypto
     "metaplex foundation",  // crypto
+    "mobius talent global", // lies about openings, just resume-fishing
     "nextaxiom",  // lies about remote
+    "nurp",  // lies about remote
+    "nxt level",  //lies about remote
     "orca",  // crypto
     "paradigm national",  // lies about remote
+    "paxos",  // crypto
     "prime team partners",  // lies about remote
     "prometheum",  // crypto
+    "qcells north america",  // lies about remote
     "raydar",  // lies about remote
     "river",  // crypto
+    "scribe",  // lies about remote
     "seer",  // crypto
     "sevenrooms",  // lies about openings, just resume-fishing
     "shi international corp\\.",  // lies about remote
+    "success matcher recruitment, llc",  // lies about remote
     "symphony labs",  // crypto
+    "tecton",  // lies about remote
+    "tensec",  // lies about remote
     "tentec, inc\\.",  // lies about remote
+    "the fountain group",  // lies about remote
     "the judge group",  // lies about remote
     "trm labs",  // crypto
+    "trojan trading",  // crypto
     "trustec",  // lies about remote
     "uniswap labs",  // crypto
     "united talent agency",  // lies about remote
+    "unseen",  // lies about openings, just resume-fishing
     "upwards",  // lies about remote
     "valve engineers",  // lies about remote
     "wex", // lies about remote
