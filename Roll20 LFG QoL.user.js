@@ -2,6 +2,8 @@
 // @name             Roll20 LFG QoL
 // @match            https://app.roll20.net/lfg/search/*
 // @version          1.0
+// @grant            GM_getValue
+// @grant            GM_setValue
 // ==/UserScript==
 
 (function() {
