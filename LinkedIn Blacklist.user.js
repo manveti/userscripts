@@ -1,13 +1,11 @@
 // ==UserScript==
 // @name             LinkedIn Blacklist
-// @match            https://www.linkedin.com/*
+// @match            https://www.linkedin.com/jobs/*
 // @version          1.0
 // ==/UserScript==
 
 (async function() {
-  const JOB_LIST_SELECTOR = ".scaffold-layout__list";
-  const JOB_SELECTOR = "li";
-  const EMPLOYER_SELECTOR = ".artdeco-entity-lockup__subtitle";
+//TODO: handle new single-page design (whole page refreshes on page change, needing new cruft-clearing and new job list node)
   const OBSERVER_OPTIONS = {
     childList: true,
     subtree: true
@@ -82,6 +80,7 @@
     "Motional",  // ghosted
     "Multi Media LLC",  // ghosted
     "Mytra",  // ghosted
+    "Nametag",  // ghosted
     "NextAxiom",  // lies about remote
     "NexTech Capital",  // lies about openings, just resume-fishing
     "Nira Energy",  // ghosted
@@ -120,6 +119,7 @@
     "Trojan Trading",  // crypto
     "Trustec",  // lies about remote
     "TVision",  // ghosted
+    "Umbra",  // ghosted
     "Uniswap Labs",  // crypto
     "United Talent Agency",  // lies about remote
     "Unseen",  // lies about openings, just resume-fishing
@@ -137,30 +137,102 @@
 
   let settleTimeout;
 
-  async function getJobList() {
+  class JobListHandler {
+    static JOB_LIST_SELECTOR;
+
+    constructor(jobList) {
+      this.jobList = jobList;
+    }
+
+    static getJobList() {
+      return document.querySelector(this.JOB_LIST_SELECTOR);
+    }
+
+    getJobNodes() {
+      return [];
+    }
+
+    getEmployerNode() {}
+  }
+
+  class LegacyJobListHandler extends JobListHandler {
+    static JOB_LIST_SELECTOR = ".scaffold-layout__list";
+    static JOB_SELECTOR = "li";
+    static EMPLOYER_SELECTOR = ".artdeco-entity-lockup__subtitle";
+
+    getJobNodes() {
+      return this.jobList.querySelectorAll(this.constructor.JOB_SELECTOR);
+    }
+
+    getEmployerNode(jobNode) {
+      return jobNode.querySelector(this.constructor.EMPLOYER_SELECTOR);
+    }
+  }
+
+  class SlopJobListHandler extends JobListHandler {
+    static JOB_LIST_SELECTOR = 'div[componentkey="SearchResultsMainContent"]';
+    static JOB_SELECTOR = ":scope > div[style]";
+
+    getJobNodes() {
+      return this.jobList.querySelectorAll(this.constructor.JOB_SELECTOR);
+    }
+
+    getEmployerNode(jobNode) {
+      // this is a fragile hack, but unavoidable because the layout has very few reasonable landmarks
+      return jobNode.querySelectorAll("p")[1];
+    }
+
+    clearLayoutCruft() {
+      // messenger overlay can cover the "more..." link to expand job descriptions
+      let msgOverlay = document.getElementById("interop-outlet");
+      if (msgOverlay) {
+        msgOverlay.style.display = "none";
+      }
+      // blue overlay bar at the bottom of the results list
+      this.jobList.childNodes[this.jobList.childNodes.length - 1].style.display = "none";
+      // nav bar has lots of pointless buttons to add keywords to the search; trim the most pointless of them so they don't end up line-wrapping
+      let navBar = document.getElementById("JobsSearchFilters").querySelector("nav");
+      for (let navButton of navBar.querySelectorAll(":scope > *:has(> div[aria-checked])")) {
+        navButton.style.display = "none";
+      }
+    }
+  }
+
+  function getJobListHandlerHelper() {
+    let jobList = LegacyJobListHandler.getJobList();
+    if (jobList) {
+      return new LegacyJobListHandler(jobList);
+    }
+    jobList = SlopJobListHandler.getJobList();
+    if (jobList) {
+      return new SlopJobListHandler(jobList);
+    }
+  }
+
+  async function getJobListHandler() {
     return new Promise((resolve) => {
-      let jobList = document.querySelector(JOB_LIST_SELECTOR);
-      if (jobList) {
-        return resolve(jobList);
+      let jobListHandler = getJobListHandlerHelper();
+      if (jobListHandler) {
+        return resolve(jobListHandler);
       }
 
       let observer = new MutationObserver(() => {
-        let jobList = document.querySelector(JOB_LIST_SELECTOR);
-        if (jobList) {
+        let jobListHandler = getJobListHandlerHelper();
+        if (jobListHandler) {
           observer.disconnect();
-          resolve(jobList);
+          return resolve(jobListHandler);
         }
       });
       observer.observe(document.body, OBSERVER_OPTIONS);
     });
   }
 
-  function markBlacklistedHelper(jobList) {
-    for (let jobNode of jobList.querySelectorAll(JOB_SELECTOR)) {
+  function markBlacklistedHelper(jobListHandler) {
+    for (let jobNode of jobListHandler.getJobNodes()) {
       if (jobNode.linkedinBlacklistTested) {
         continue;
       }
-      let empNode = jobNode.querySelector(EMPLOYER_SELECTOR);
+      let empNode = jobListHandler.getEmployerNode(jobNode);
       if (!empNode) {
         continue;
       }
@@ -178,24 +250,31 @@
     }
   }
 
-  function markBlacklistedAfterSettled(jobList) {
+  function markBlacklistedAfterSettled(jobListHandler) {
     clearTimeout(settleTimeout);
-    settleTimeout = setTimeout(() => markBlacklistedHelper(jobList), SETTLE_DELAY);
+    settleTimeout = setTimeout(() => markBlacklistedHelper(jobListHandler), SETTLE_DELAY);
   }
 
-  function markBlacklisted(jobList) {
-    markBlacklistedHelper(jobList);
+  function markBlacklisted(jobListHandler) {
+    markBlacklistedHelper(jobListHandler);
     let observer = new MutationObserver((mutations) => {
       function hasNewElement(mutation) {
         return Array.from(mutation.addedNodes).some((node) => (node.nodeType == 1));  // nodeType 1 is element node
       }
       if (mutations.some(hasNewElement)) {
-        markBlacklistedAfterSettled(jobList);
+        markBlacklistedAfterSettled(jobListHandler);
       }
     });
-    observer.observe(jobList, OBSERVER_OPTIONS);
+    observer.observe(jobListHandler.jobList, OBSERVER_OPTIONS);
   }
 
-  let jobList = await getJobList();
-  markBlacklisted(jobList);
+  let jobListHandler = await getJobListHandler();
+  if (jobListHandler instanceof SlopJobListHandler) {
+    // slop search loads everything then removes it and replaces it with a new DOM, so we need to wait a while and grab the new one
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    jobListHandler = await getJobListHandler();
+    // slop search has a lot of extraneous stuff in the layout which means 25-30% fewer results can bee seen at a time; remove some of it
+    jobListHandler.clearLayoutCruft();
+  }
+  markBlacklisted(jobListHandler);
 })();
