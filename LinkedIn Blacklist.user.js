@@ -5,7 +5,6 @@
 // ==/UserScript==
 
 (async function() {
-//TODO: handle new single-page design (whole page refreshes on page change, needing new cruft-clearing and new job list node)
   const OBSERVER_OPTIONS = {
     childList: true,
     subtree: true
@@ -135,13 +134,13 @@
   let hideExp = new RegExp("^((" + HIDE_EMPLOYERS.join(")|(") + "))$", "i");
   let annotateExp = new RegExp("^((" + ANNOTATE_EMPLOYERS.join(")|(") + "))$", "i");
 
-  let settleTimeout;
-
   class JobListHandler {
     static JOB_LIST_SELECTOR;
 
     constructor(jobList) {
       this.jobList = jobList;
+      this.settleTimeout = null;
+      this.jobsObserver = null;
     }
 
     static getJobList() {
@@ -152,7 +151,64 @@
       return [];
     }
 
-    getEmployerNode() {}
+    getEmployerNode(jobNode) {}
+
+    handleBlacklistedOnce() {
+      for (let jobNode of this.getJobNodes()) {
+        if (jobNode.linkedinBlacklistTested) {
+          continue;
+        }
+        let empNode = this.getEmployerNode(jobNode)
+        if (!empNode) {
+          continue;
+        }
+        jobNode.linkedinBlacklistTested = true;
+        let employer = empNode.innerText.replace(/<!--.*?-->/g, "");
+        if (hideExp.test(employer)) {
+          jobNode.style.display = "none";
+        }
+        else if (annotateExp.test(employer)) {
+          let blacklistNode = document.createElement("span");
+          blacklistNode.innerText = "(blacklisted)";
+          blacklistNode.style.color = "#FF0000";
+          empNode.appendChild(blacklistNode);
+        }
+      }
+    }
+
+    handleBlacklistedAfterSettled() {
+      clearTimeout(this.settleTimeout);
+      this.settleTimeout = setTimeout(() => this.handleBlacklistedOnce(), SETTLE_DELAY);
+    }
+
+    handleBlacklisted() {
+      this.handleBlacklistedOnce();
+      this.jobsObserver = new MutationObserver((mutations) => {
+        function hasNewElement(mutation) {
+          return Array.from(mutation.addedNodes).some((node) => (node.nodeType == 1));  // nodeType 1 is element node
+        }
+        if (mutations.some(hasNewElement)) {
+          this.handleBlacklistedAfterSettled();
+        }
+      });
+      this.jobsObserver.observe(this.jobList, OBSERVER_OPTIONS);
+    }
+
+    start() {
+      this.handleBlacklisted();
+    }
+
+    halt() {
+      this.jobsObserver.disconnect();
+      this.jobsObserver = null;
+      clearTimeout(this.settleTimeout);
+      this.settleTimeout = null;
+    }
+
+    restart() {
+      this.halt();
+      this.start();
+    }
   }
 
   class LegacyJobListHandler extends JobListHandler {
@@ -173,6 +229,43 @@
     static JOB_LIST_SELECTOR = 'div[componentkey="SearchResultsMainContent"]';
     static JOB_SELECTOR = ":scope > div[style]";
 
+    constructor(jobList) {
+      super(jobList);
+      // slop search often removes everything and replaces it with a new DOM, so set up an observer to grab the new job list when that happens
+      let self = this;
+      let observer = new MutationObserver((mutations) => {
+        function jobListRemoved(mutation){
+          return Array.from(mutation.removedNodes).some((node) => (node.contains(self.jobList)));
+        }
+        if (mutations.some(jobListRemoved)) {
+          self.restart();
+        }
+      });
+      observer.observe(document.body, OBSERVER_OPTIONS);
+    }
+
+    start() {
+      // slop search has a lot of extraneous stuff in the layout which means 25-30% fewer results can bee seen at a time; remove some of it
+      this.clearLayoutCruft();
+      super.start();
+    }
+
+    restart() {
+      this.halt();
+      this.jobList = this.constructor.getJobList();
+      if (this.jobList) {
+        return this.start();
+      }
+      let observer = new MutationObserver(() => {
+        this.jobList = this.constructor.getJobList();
+        if (this.jobList) {
+          observer.disconnect();
+          return this.start();
+        }
+      });
+      observer.observe(document.body, OBSERVER_OPTIONS);
+    }
+
     getJobNodes() {
       return this.jobList.querySelectorAll(this.constructor.JOB_SELECTOR);
     }
@@ -190,6 +283,7 @@
       }
       // blue overlay bar at the bottom of the results list
       this.jobList.childNodes[this.jobList.childNodes.length - 1].style.display = "none";
+      this.jobList.childNodes[this.jobList.childNodes.length - 1].linkedinBlacklistTested = true;  // else we'll treat this as a job node
       // nav bar has lots of pointless buttons to add keywords to the search; trim the most pointless of them so they don't end up line-wrapping
       let navBar = document.getElementById("JobsSearchFilters").querySelector("nav");
       for (let navButton of navBar.querySelectorAll(":scope > *:has(> div[aria-checked])")) {
@@ -227,54 +321,6 @@
     });
   }
 
-  function markBlacklistedHelper(jobListHandler) {
-    for (let jobNode of jobListHandler.getJobNodes()) {
-      if (jobNode.linkedinBlacklistTested) {
-        continue;
-      }
-      let empNode = jobListHandler.getEmployerNode(jobNode);
-      if (!empNode) {
-        continue;
-      }
-      jobNode.linkedinBlacklistTested = true;
-      let employer = empNode.innerText.replace(/<!--.*?-->/g, "");
-      if (hideExp.test(employer)) {
-        jobNode.style.display = "none";
-      }
-      else if (annotateExp.test(employer)) {
-        let blacklistNode = document.createElement("span");
-        blacklistNode.innerText = "(blacklisted)";
-        blacklistNode.style.color = "#FF0000";
-        empNode.appendChild(blacklistNode);
-      }
-    }
-  }
-
-  function markBlacklistedAfterSettled(jobListHandler) {
-    clearTimeout(settleTimeout);
-    settleTimeout = setTimeout(() => markBlacklistedHelper(jobListHandler), SETTLE_DELAY);
-  }
-
-  function markBlacklisted(jobListHandler) {
-    markBlacklistedHelper(jobListHandler);
-    let observer = new MutationObserver((mutations) => {
-      function hasNewElement(mutation) {
-        return Array.from(mutation.addedNodes).some((node) => (node.nodeType == 1));  // nodeType 1 is element node
-      }
-      if (mutations.some(hasNewElement)) {
-        markBlacklistedAfterSettled(jobListHandler);
-      }
-    });
-    observer.observe(jobListHandler.jobList, OBSERVER_OPTIONS);
-  }
-
   let jobListHandler = await getJobListHandler();
-  if (jobListHandler instanceof SlopJobListHandler) {
-    // slop search loads everything then removes it and replaces it with a new DOM, so we need to wait a while and grab the new one
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    jobListHandler = await getJobListHandler();
-    // slop search has a lot of extraneous stuff in the layout which means 25-30% fewer results can bee seen at a time; remove some of it
-    jobListHandler.clearLayoutCruft();
-  }
-  markBlacklisted(jobListHandler);
+  jobListHandler.start();
 })();
