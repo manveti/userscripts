@@ -13,17 +13,32 @@
   //TODO: eventually make these dynamic
   const HIDE_EMPLOYERS = [
     "AfterQuery Experts",  // spam
+    "AIMB-X Labs",  // crypto
+    "Alchemy",  // crypto
     "Alignerr",  // spam
+    "Anchorage Digital",  // crypto
+    "Bastion",  // crypto
     "Calvary Financial Group",  // spam
+    "Category Labs",  // crypto
     "Circle",  // spam
     "Codefeast", // spam
     "CodeGeniusRecruit",  // spam
     "CodeVertex.*",  // spam
+    "Coinbase",  // crypto
+    "CoinList",  // crypto
+    "Cointracker",  // crypto
     "Crossing Hurdles",  // spam
     "Crossover",  // spam
     "CyberCoders",  // spam
+    "Eigen Labs",  // crypto
+    "Elastic",  // not technically spam, but way too many irrelevant postings
     "Ethos",  // spam
+    "Exodus",  // crypto
     "Featherless AI",  // spam
+    "Figure",  // crypto
+    "Finders SA",  // crypto
+    "Flexa",  // crypto
+    "Gemini",  // crypto
     "Handshake",  // spam
     "Haystack",  // spam
     "HelixRecruit",  // spam
@@ -35,22 +50,39 @@
     "Jobot",  // spam
     "Jobot Consulting",  // spam
     "Jobs AI",  // spam
+    "Kinetic",  // crypto
+    "Kraken",  // crypto
     "Ladders",  // spam
+    "Magic Eden",  // crypto
     "Mercor",  // spam
     "Meta",  // just no
+    "Metaplex Foundation",  // crypto
     "OpenAI",  // just no
+    "Orca",  // crypto
+    "ŌURA",  // ghosted after invasive evaluation
     "Paramount Financial Recruiting",  //spam
+    "Paxos",  // crypto
+    "Plexus Resource Solutions",  // crypto
+    "Prometheum",  // crypto
     "PSI Groups", // spam
     "Quik Hire Staffing",  // spam
+    "Rain",  // crypto
     "RemoteHunter",  // spam
+    "River",  // crypto
     "Samsara",  // spam
+    "Seer",  // crypto
     "Storm\\d+",  // spam
+    "Symphony Labs",  // crypto
     "Synthires",  // spam
     "TalentHop",  // spam
     "The Bill Lampe Group Inc\\.",  // spam
     "Triumphant Financial Group",  // spam
+    "TRM Labs",  // crypto
+    "Trojan Trading",  // crypto
     "TYG",  // lots of postings completely irrelevant to my search terms
     "Underdog[^a-zA-Z].*",  // spam
+    "Uniswap Labs",  // crypto
+    "ValCera",  // crypto
     "YO AI Labs",  // spam
     "YO HR Consultancy",  // spam
   ];
@@ -58,41 +90,27 @@
     "Abridge",  // lies about remote
     "Acceler8 Talent",  // ghosted
     "Afresh",  // ghosted
-    "AIMB-X Labs",  // crypto
-    "Alchemy",  // crypto
-    "Anchorage Digital",  // crypto
     "Appfigures",  // lies about remote
     "Archipelago",  // lies about remote
     "Axonius",  // lies about remote
-    "Bastion",  // crypto
     "Bitsight",  // ghosted
     "Bowden Brown",  // ghosted
     "Cambium",  // lies about remote
-    "Category Labs",  // crypto
     "City Detect",  // ghosted
     "Cohesity",  // lies about remote
-    "Coinbase",  // crypto
-    "CoinList",  // crypto
-    "Cointracker",  // crypto
     "Cook'd",  // lies about openings, just resume-fishing
     "Cortex",  // ghosted
     "Daksta \\| Connecting Mission Critical Talent",  // lies about remote
     "Dandelion Health",  // ghosted
     "Earnest",  // lies about remote
     "ECS \\(Equus Compute Solutions\\)",  // lies about remote
-    "Eigen Labs",  // crypto
     "Engenious",  // lies about remote
-    "Exodus",  // crypto
     "Fairwinds Technologies",  // lies about remote
-    "Figure",  // crypto
-    "Finders SA",  // crypto
-    "Flexa",  // crypto
     "Flexton Inc\\.",  // lies about remote
     "FUSTIS LLC",  // lies about remote
     "FutureTech Recruitment",  // lies about remote
     "FutureX",  // ghosted
     "FuturHealth",  // ghosted
-    "Gemini",  // crypto
     "GliaCell Technologies",  // lies about remote
     "Hackajob",  // lies about remote
     "HackerOne",  // lies about remote
@@ -104,12 +122,8 @@
     "Insight Global",  // lies about remote
     "Judi Health",  //ghosted
     "Katalyst Space Technologies",  // lies about remote
-    "Kinetic",  // crypto
-    "Kraken",  // crypto
     "limitless",  // ghosted
-    "Magic Eden",  // crypto
     "Magnet Forensics",  // ghosted
-    "Metaplex Foundation",  // crypto
     "MissionHires",  // lies about remote
     "Mobius Talent Global", // lies about openings, just resume-fishing
     "Motional",  // ghosted
@@ -122,23 +136,15 @@
     "Nurp",  // lies about remote
     "Nxt Level",  // lies about remote
     "Onebrief",  // ghosted
-    "Orca",  // crypto
-    "ŌURA",  // ghosted after invasive evaluation
     "Paradigm National",  // lies about remote
-    "Paxos",  // crypto
     "Pivotal",  // ghosted
-    "Plexus Resource Solutions",  // crypto
     "Prime Team Partners",  // lies about remote
     "PROJECTUS",  // lies about remote
     "Prolaio",  // ghosted
-    "Prometheum",  // crypto
     "Pryon",  // ghosted
     "Qcells North America",  // lies about remote
-    "Rain",  // crypto
     "Raydar",  // lies about remote
-    "River",  // crypto
     "Scribe",  // lies about remote
-    "Seer",  // crypto
     "Seesaw",  // ghosted
     "Selby Jennings",  // ghosted
     "SevenRooms",  // lies about openings, just resume-fishing
@@ -147,7 +153,6 @@
     "Snapsheet Inc",  // ghosted
     "Stott and May",  // ghosted
     "Success Matcher Recruitment, LLC",  // lies about remote
-    "Symphony Labs",  // crypto
     "Teal Energi",  // lies about remote
     "TechTree",  // lies about openings, just resume-fishing
     "Tecton",  // lies about remote
@@ -156,16 +161,12 @@
     "The Fountain Group",  // lies about remote
     "The Judge Group",  // lies about remote
     "The Voleon Group",  // ghosted
-    "TRM Labs",  // crypto
-    "Trojan Trading",  // crypto
     "Trustec",  // lies about remote
     "TVision",  // ghosted
     "Umbra",  // ghosted
-    "Uniswap Labs",  // crypto
     "United Talent Agency",  // lies about remote
     "Unseen",  // lies about openings, just resume-fishing
     "Upwards",  // lies about remote
-    "ValCera",  // crypto
     "Valon",  // ghosted
     "Valve Engineers",  // lies about remote
     "Wealthsimple",  // lies about openings, just resume-fishing
