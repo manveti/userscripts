@@ -12,22 +12,54 @@
   const SETTLE_DELAY = 200;  // ms; how long we wait for job list to settle down before traversing
   //TODO: eventually make these dynamic
   const HIDE_EMPLOYERS = [
+    "AfterQuery Experts",  // spam
     "Alignerr",  // spam
+    "Calvary Financial Group",  // spam
     "Circle",  // spam
+    "Codefeast", // spam
+    "CodeGeniusRecruit",  // spam
+    "CodeVertex.*",  // spam
     "Crossing Hurdles",  // spam
+    "Crossover",  // spam
+    "CyberCoders",  // spam
+    "Ethos",  // spam
+    "Featherless AI",  // spam
     "Handshake",  // spam
     "Haystack",  // spam
     "HelixRecruit",  // spam
     "Hire Feed",  // spam
+    "Hired",  // lies about openings, just resume-fishing
+    "Humana",  // maybe not technically spam, but way too many postings
+    "HuntingCube",  // crypto
+    "IBM",  // not technically spam, but way too many irrelevant postings
+    "Jobot",  // spam
+    "Jobot Consulting",  // spam
+    "Jobs AI",  // spam
     "Ladders",  // spam
+    "Mercor",  // spam
+    "Meta",  // just no
+    "OpenAI",  // just no
+    "Paramount Financial Recruiting",  //spam
+    "PSI Groups", // spam
     "Quik Hire Staffing",  // spam
     "RemoteHunter",  // spam
     "Samsara",  // spam
+    "Storm\\d+",  // spam
+    "Synthires",  // spam
+    "TalentHop",  // spam
+    "The Bill Lampe Group Inc\\.",  // spam
+    "Triumphant Financial Group",  // spam
+    "TYG",  // lots of postings completely irrelevant to my search terms
+    "Underdog[^a-zA-Z].*",  // spam
     "YO AI Labs",  // spam
+    "YO HR Consultancy",  // spam
   ];
   const ANNOTATE_EMPLOYERS = [
     "Abridge",  // lies about remote
+    "Acceler8 Talent",  // ghosted
     "Afresh",  // ghosted
+    "AIMB-X Labs",  // crypto
+    "Alchemy",  // crypto
     "Anchorage Digital",  // crypto
     "Appfigures",  // lies about remote
     "Archipelago",  // lies about remote
@@ -45,11 +77,13 @@
     "Cook'd",  // lies about openings, just resume-fishing
     "Cortex",  // ghosted
     "Daksta \\| Connecting Mission Critical Talent",  // lies about remote
+    "Dandelion Health",  // ghosted
     "Earnest",  // lies about remote
     "ECS \\(Equus Compute Solutions\\)",  // lies about remote
     "Eigen Labs",  // crypto
     "Engenious",  // lies about remote
     "Exodus",  // crypto
+    "Fairwinds Technologies",  // lies about remote
     "Figure",  // crypto
     "Finders SA",  // crypto
     "Flexa",  // crypto
@@ -59,6 +93,7 @@
     "FutureX",  // ghosted
     "FuturHealth",  // ghosted
     "Gemini",  // crypto
+    "GliaCell Technologies",  // lies about remote
     "Hackajob",  // lies about remote
     "HackerOne",  // lies about remote
     "Hirematic Talent Solutions",  // lies about remote
@@ -67,6 +102,7 @@
     "Inclusively",  // requires disability
     "Ingram Micro",  // lies about remote
     "Insight Global",  // lies about remote
+    "Judi Health",  //ghosted
     "Katalyst Space Technologies",  // lies about remote
     "Kinetic",  // crypto
     "Kraken",  // crypto
@@ -90,11 +126,15 @@
     "ŌURA",  // ghosted after invasive evaluation
     "Paradigm National",  // lies about remote
     "Paxos",  // crypto
+    "Pivotal",  // ghosted
+    "Plexus Resource Solutions",  // crypto
     "Prime Team Partners",  // lies about remote
+    "PROJECTUS",  // lies about remote
     "Prolaio",  // ghosted
     "Prometheum",  // crypto
     "Pryon",  // ghosted
     "Qcells North America",  // lies about remote
+    "Rain",  // crypto
     "Raydar",  // lies about remote
     "River",  // crypto
     "Scribe",  // lies about remote
@@ -104,10 +144,12 @@
     "SevenRooms",  // lies about openings, just resume-fishing
     "SHI International Corp\\.",  // lies about remote
     "Smart Design",  // lies about remote
+    "Snapsheet Inc",  // ghosted
     "Stott and May",  // ghosted
     "Success Matcher Recruitment, LLC",  // lies about remote
     "Symphony Labs",  // crypto
     "Teal Energi",  // lies about remote
+    "TechTree",  // lies about openings, just resume-fishing
     "Tecton",  // lies about remote
     "Tensec",  // lies about remote
     "Tentec, Inc\\.",  // lies about remote
@@ -123,6 +165,7 @@
     "United Talent Agency",  // lies about remote
     "Unseen",  // lies about openings, just resume-fishing
     "Upwards",  // lies about remote
+    "ValCera",  // crypto
     "Valon",  // ghosted
     "Valve Engineers",  // lies about remote
     "Wealthsimple",  // lies about openings, just resume-fishing
@@ -131,8 +174,27 @@
     "Yara AI",  // lies about openings, just resume-fishing
     "Zest for Tech",  // ghosted
   ];
+  const HIDE_TITLES = [
+    "\\bActuary\\b",
+    "\\bAI\\b",
+    "\\bDeveloper Advocate\\b",
+    "\\bDevOps Engineer\\b",
+    "\\bForward Deploy",
+    "\\bFull[- ]?Stack\\b",
+    "\\bGrant Writer\\b",
+    "\\bManager\\b",
+    "\\bPlatform Engineer\\b",
+    "\\bSales Engineer\\b,"
+    "\\bSite Reliability\\b",
+    "\\bStructural( Design)? Engineer\\b",
+    "\\bSupport Engineer\\b",
+    "\\bTransmission Line Engineer\\b",
+  ];
+  // maybe replace "\\bAI\\b" with:
+  //    "\\bAI-(First|Native)\\b", "\\bAI(/ML)? ((Data Engineer)|Developer|Domain|Engineer|Native|Operations|Product|Research|Solutions)\\b"
   let hideExp = new RegExp("^((" + HIDE_EMPLOYERS.join(")|(") + "))$", "i");
   let annotateExp = new RegExp("^((" + ANNOTATE_EMPLOYERS.join(")|(") + "))$", "i");
+  let titleHideExp = new RegExp("(" + HIDE_TITLES.join(")|(") + ")", "i")
 
   class JobListHandler {
     static JOB_LIST_SELECTOR;
@@ -151,6 +213,8 @@
       return [];
     }
 
+    getTitleNode(jobNode) {}
+
     getEmployerNode(jobNode) {}
 
     handleBlacklistedOnce() {
@@ -158,7 +222,16 @@
         if (jobNode.linkedinBlacklistTested) {
           continue;
         }
-        let empNode = this.getEmployerNode(jobNode)
+        let titleNode = this.getTitleNode(jobNode);
+        if (titleNode) {
+          let title = titleNode.innerText.replace(/<!--.*?-->/g, "");
+          if (titleHideExp.test(title)) {
+            jobNode.style.display = "none";
+            jobNode.linkedinBlacklistTested = true;
+            continue;
+          }
+        }
+        let empNode = this.getEmployerNode(jobNode);
         if (!empNode) {
           continue;
         }
@@ -215,9 +288,14 @@
     static JOB_LIST_SELECTOR = ".scaffold-layout__list";
     static JOB_SELECTOR = "li";
     static EMPLOYER_SELECTOR = ".artdeco-entity-lockup__subtitle";
+    static TITLE_SELECTOR = ".artdeco-entity-lockup__title span";
 
     getJobNodes() {
       return this.jobList.querySelectorAll(this.constructor.JOB_SELECTOR);
+    }
+
+    getTitleNode(jobNode) {
+      return jobNode.querySelector(this.constructor.TITLE_SELECTOR);
     }
 
     getEmployerNode(jobNode) {
@@ -268,6 +346,11 @@
 
     getJobNodes() {
       return this.jobList.querySelectorAll(this.constructor.JOB_SELECTOR);
+    }
+
+    getTitleNode(jobNode) {
+      // this is a fragile hack, but unavoidable because the layout has very few reasonable landmarks
+      return jobNode.querySelectorAll("p")[0];
     }
 
     getEmployerNode(jobNode) {
