@@ -185,7 +185,7 @@
     "\\bGrant Writer\\b",
     "\\bManager\\b",
     "\\bPlatform Engineer\\b",
-    "\\bSales Engineer\\b,"
+    "\\bSales Engineer\\b",
     "\\bSite Reliability\\b",
     "\\bStructural( Design)? Engineer\\b",
     "\\bSupport Engineer\\b",
